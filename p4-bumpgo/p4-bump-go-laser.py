@@ -12,21 +12,21 @@ from geometry_msgs.msg import PointStamped
 from tf2_ros import Buffer, TransformListener
 from tf2_geometry_msgs import do_transform_point
 
-class ObstacleDetectorNode(Node):
+class BumpGoLaserNode(Node):
     def __init__(self):
-        super().__init__('obstacle_detector_node')
+        super().__init__('bump_go_laser_node')
 
-        self.declare_parameter('min_distance', 0.5)
+        self.declare_parameter('min_distance', 0.3)
         self.declare_parameter('base_frame', 'base_footprint')
 
         self.min_distance = self.get_parameter('min_distance').value
         self.base_frame = self.get_parameter('base_frame').value
 
-        self.get_logger().info(f'Obstacle_detector_node set to {self.min_distance:.2f} m')
+        self.get_logger().info(f'BumpGoLaserNode set to {self.min_distance:.2f} m')
 
         self.laser_sub = self.create_subscription(
             LaserScan,
-            'input_laser',
+            'scan_raw',
             self.laser_callback,
             rclpy.qos.qos_profile_sensor_data)
 
@@ -72,6 +72,7 @@ class ObstacleDetectorNode(Node):
 
                 angle_base = math.atan2(pt_base.point.y, pt_base.point.x)
                 distance_base = math.hypot(pt_base.point.x, pt_base.point.y)
+                
                 self.get_logger().info(
                     f'Obstacle @ {self.base_frame}: x={pt_base.point.x:.2f}, y={pt_base.point.y:.2f}, '
                     f'distance={distance_base:.2f} m, angle={math.degrees(angle_base):.2f} deg'
@@ -81,14 +82,16 @@ class ObstacleDetectorNode(Node):
                 self.get_logger().warn(f'No TF from {scan.header.frame_id} to {self.base_frame}: {e}')
 
 
+
             
         else:
             self.get_logger().debug(f'No obstacle closer than {self.min_distance:.2f} m (min={distance_min:.2f} m)')
 
 
+
 def main(args=None):
     rclpy.init(args=args)
-    node = ObstacleDetectorNode()
+    node = BumpGoLaserNode()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
