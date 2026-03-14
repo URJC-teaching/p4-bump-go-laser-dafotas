@@ -90,15 +90,15 @@ class BumpGoLaserNode(Node):
 
                 if (self.angle_obstacle >= -math.pi / 2) and (self.angle_obstacle <= -math.pi / 6):
                     self.state = 'right_obstacle'
-                    self.get_logger().info(f"Obstáculo detectado a la derecha (entre -90º y -30º)")
+                    self.get_logger().info("Obstáculo detectado a la derecha (entre -90º y -30º).")
 
                 elif (self.angle_obstacle > -math.pi / 6) and (self.angle_obstacle < math.pi / 6):
                     self.state = 'center_obstacle'
-                    self.get_logger().info(f"Obstáculo detectado en el medio (entre -30º y +30º)")
+                    self.get_logger().info("Obstáculo detectado en el medio (entre -30º y +30º).")
 
                 elif (self.angle_obstacle >= math.pi / 6) and (self.angle_obstacle <= math.pi / 2):
                     self.state = 'left_obstacle'
-                    self.get_logger().info(f"Obstáculo detectado a la izquierda (entre +30º y +90º)")
+                    self.get_logger().info("Obstáculo detectado a la izquierda (entre +30º y +90º).")
                     
 
             except Exception as e:
