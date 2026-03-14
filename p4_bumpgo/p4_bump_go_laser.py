@@ -9,8 +9,12 @@ from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Bool
 from geometry_msgs.msg import PointStamped
+from geometry_msgs.msg import Twist
 from tf2_ros import Buffer, TransformListener
 from tf2_geometry_msgs import do_transform_point
+
+from rclpy.duration import Duration
+import time
 
 class BumpGoLaserNode(Node):
     def __init__(self):
@@ -39,6 +43,13 @@ class BumpGoLaserNode(Node):
         self.distance_obstacle = 10.0
         self.angle_obstacle = 0.0
 
+        self.vel_publisher = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.timer = self.create_timer(0.05, self.control_loop)
+
+        self.turning_time = Duration(seconds = 4.0)
+
+        self.state_ts = self.get_clock().now()
+
     def laser_callback(self, scan: LaserScan):
         if self.state == 'init':
             self.state = 'forward'
@@ -59,6 +70,10 @@ class BumpGoLaserNode(Node):
         self.obstacle_pub.publish(obstacle_msg)
 
         if obstacle_msg.data: # if obstacle detected within min_distance
+
+            if self.state == 'forward':
+                self.state_ts = self.get_clock().now()
+
             angle = scan.angle_min + scan.angle_increment * min_idx # relative to the sensor frame
             x = distance_min * math.cos(angle)
             y = distance_min * math.sin(angle)
@@ -106,9 +121,33 @@ class BumpGoLaserNode(Node):
             
         else:
             self.get_logger().debug(f'No obstacle closer than {self.min_distance:.2f} m (min={distance_min:.2f} m)')
-            self.state = 'forward'
-            self.distance_obstacle = 10.0
-            self.angle_obstacle = 0.0
+            if (self.get_clock().now() - self.state_ts) > self.turning_time:
+                self.state = 'forward'
+                self.distance_obstacle = 10.0
+                self.angle_obstacle = 0.0
+
+    def control_loop(self):
+
+        twist = Twist()
+
+        if self.state == 'forward':
+            
+            twist.linear.x = 0.2
+            twist.angular.z = 0.0
+
+        elif (self.state == 'right_obstacle') or (self.state =='center_obstacle'):
+            twist.linear.x = -0.3
+            twist.angular.z = 0.5
+            if (self.get_clock().now() - self.state_ts) > self.turning_time:
+                self.state = 'forward'
+
+        elif self.state == 'left_obstacle':
+            twist.linear.x = -0.3
+            twist.angular.z = -0.5
+            if (self.get_clock().now() - self.state_ts) > self.turning_time:
+                self.state = 'forward'
+
+        self.vel_publisher.publish(twist)
 
 
 
