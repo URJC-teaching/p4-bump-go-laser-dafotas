@@ -16,7 +16,7 @@ class ObstacleDetectorNode(Node):
     def __init__(self):
         super().__init__('obstacle_detector_node')
 
-        self.declare_parameter('min_distance', 0.5)
+        self.declare_parameter('min_distance', 0.7)
         self.declare_parameter('base_frame', 'base_footprint')
 
         self.min_distance = self.get_parameter('min_distance').value
@@ -35,7 +35,14 @@ class ObstacleDetectorNode(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
+        self.state = 'init'
+        self.distance_obstacle = 10.0
+        self.angle_obstacle = 0.0
+
     def laser_callback(self, scan: LaserScan):
+        if self.state == 'init':
+            self.state = 'forward'
+
         if not scan.ranges:
             return
         
@@ -77,13 +84,30 @@ class ObstacleDetectorNode(Node):
                     f'distance={distance_base:.2f} m, angle={math.degrees(angle_base):.2f} deg'
                 )
 
+                self.distance_obstacle = distance_base
+                self.angle_obstacle = angle_base
+
+                if (self.angle_obstacle >= -math.pi / 2) and (self.angle_obstacle <= -math.pi / 6):
+                    self.state = 'right_obstacle'
+                    self.get_logger().info(f"Obstáculo detectado a la derecha (entre -90º y -30º)")
+
+                elif (self.angle_obstacle > -math.pi / 6) and (self.angle_obstacle < math.pi / 6):
+                    self.state = 'center_obstacle'
+                    self.get_logger().info(f"Obstáculo detectado en el medio (entre -30º y +30º)")
+
+                elif (self.angle_obstacle >= math.pi / 6) and (self.angle_obstacle <= math.pi / 2):
+                    self.state = 'left_obstacle'
+                    self.get_logger().info(f"Obstáculo detectado a la izquierda (entre +30º y +90º)")
+                    
+
             except Exception as e:
                 self.get_logger().warn(f'No TF from {scan.header.frame_id} to {self.base_frame}: {e}')
-
-
             
         else:
             self.get_logger().debug(f'No obstacle closer than {self.min_distance:.2f} m (min={distance_min:.2f} m)')
+            self.state = 'forward'
+            self.distance_obstacle = 10.0
+            self.angle_obstacle = 0.0
 
 
 def main(args=None):
