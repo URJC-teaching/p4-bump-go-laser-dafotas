@@ -24,6 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+        'laser_bump_go_node = p4-bumpgo.p4-bump-go-laser:main'
         ],
     },
 )
