@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'p4-bumpgo'
+package_name = 'p4_bumpgo'
 
 setup(
     name=package_name,
@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-        'laser_bump_go_node = p4-bumpgo.p4-bump-go-laser:main'
+        'laser_bump_go_node = p4_bumpgo.p4_bump_go_laser:main'
         ],
     },
 )
